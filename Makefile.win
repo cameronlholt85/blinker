@@ -1,0 +1,28 @@
+DEVICE	=	attiny85
+CLOCK	=	1000000
+PROGRAMMER	=	-c usbasp -P usb
+OBJECTS	=	binaries/main.o
+FUSES	=	-U lfuse:w:0x62:m -U hfuse:w:0xdf:m -U efuse:w:0xff:m
+AVRDUDE	=	avrdude.exe $(PROGRAMMER) -p $(DEVICE)
+COMPILE	=	avr-gcc-4.3.3.exe -Wall -g -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE)
+
+all: cpp main.hex install
+
+flash:
+	$(AVRDUDE) -U flash:w:binaries/main.hex:i
+
+fuse:
+	$(AVRDUDE) $(FUSES)
+
+install: flash fuse
+
+clean:
+	rm -f binaries/main.hex binaries/main.o $(OBJECTS)
+
+main.hex:
+	rm -f binaries/main.hex
+	avr-objcopy.exe -j .text -j .data -O ihex binaries/main.o binaries/main.hex
+	avr-size.exe --format=avr --mcu=$(DEVICE) binaries/main.o
+
+cpp:
+	$(COMPILE)  main.cpp utils.cpp TinyI2C.cpp -o binaries/main.o
